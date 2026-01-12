@@ -5,11 +5,13 @@ export default function Home() {
   const [texto, setTexto] = useState('');
   const [resumo, setResumo] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [copiado, setCopiado] = useState(false);
 
   const gerarResumo = async () => {
     if (!texto) return alert("Por favor, cole um texto!");
     setCarregando(true);
     setResumo('');
+    setCopiado(false);
     
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -28,26 +30,28 @@ export default function Home() {
       });
 
       const data = await response.json();
-      if (data.choices) {
-        setResumo(data.choices[0].message.content);
-      } else {
-        alert("Erro na resposta da IA. Verifique sua chave no painel da Groq.");
-      }
+      setResumo(data.choices[0].message.content);
     } catch (error) {
-      alert("Erro ao conectar com a IA do Groq.");
+      alert("Erro ao conectar com a IA.");
     } finally {
       setCarregando(false);
     }
   };
 
+  const copiarTexto = () => {
+    navigator.clipboard.writeText(resumo);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-gray-50 text-gray-900">
       <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-        <h1 className="text-3xl font-bold text-blue-600 mb-2">Resumo Rápido</h1>
-        <p className="text-gray-500 mb-6 italic">IA Gratuita (Groq) Ativada</p>
+        <h1 className="text-3xl font-bold text-blue-600 mb-2 text-center">Resumo Rápido</h1>
+        <p className="text-center text-gray-500 mb-6 italic text-sm">IA Gratuita (Groq) Ativada</p>
         
         <textarea 
-          className="w-full h-48 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          className="w-full h-40 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           placeholder="Cole seu texto longo aqui..."
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -56,19 +60,24 @@ export default function Home() {
         <button 
           onClick={gerarResumo}
           disabled={carregando}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 disabled:bg-gray-400 shadow-md"
+          className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-md disabled:bg-gray-400"
         >
-          {carregando ? "Processando resumo..." : "🚀 Gerar Resumo Inteligente"}
+          {carregando ? "Processando..." : "🚀 Gerar Resumo"}
         </button>
 
         {resumo && (
-          <div className="mt-8 p-6 bg-blue-50 border-l-8 border-blue-600 rounded-lg">
+          <div className="mt-8 p-6 bg-blue-50 border-l-8 border-blue-600 rounded-lg relative">
             <h2 className="text-lg font-bold text-blue-800 mb-2">Resumo:</h2>
-            <p className="text-gray-800 leading-relaxed">{resumo}</p>
+            <p className="text-gray-800 leading-relaxed mb-4">{resumo}</p>
+            <button 
+              onClick={copiarTexto}
+              className="w-full bg-white border border-blue-600 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-50 transition"
+            >
+              {copiado ? "✅ Copiado!" : "📋 Copiar Texto"}
+            </button>
           </div>
         )}
       </div>
     </main>
   );
 }
-

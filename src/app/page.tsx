@@ -14,7 +14,7 @@ export default function Home() {
   }, []);
 
   const gerarResumo = async () => {
-    if (!texto) return alert("Por favor, cole um texto!");
+    if (!texto) return alert("Cole um texto!");
     setCarregando(true);
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -25,65 +25,65 @@ export default function Home() {
         },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: "Resuma em português de forma clara." },
-            { role: "user", content: `Resuma: ${texto}` }
-          ]
+          messages: [{ role: "system", content: "Resuma em português." }, { role: "user", content: texto }]
         })
       });
       const data = await response.json();
-      const novoResumo = data.choices[0].message.content;
-      setResumo(novoResumo);
-      const novoHist = [{t: texto.substring(0, 30) + "...", r: novoResumo}, ...historico].slice(0, 5);
-      setHistorico(novoHist);
-      localStorage.setItem('historico_resumos', JSON.stringify(novoHist));
-    } catch (error) { alert("Erro na IA."); } finally { setCarregando(false); }
+      const novoR = data.choices[0].message.content;
+      setResumo(novoR);
+      const nH = [{t: texto.substring(0, 20) + "...", r: novoR}, ...historico].slice(0, 5);
+      setHistorico(nH);
+      localStorage.setItem('historico_resumos', JSON.stringify(nH));
+    } catch (e) { alert("Erro na IA."); } finally { setCarregando(false); }
   };
 
-  // Função para falar o texto
-  const falarResumo = () => {
-    if (!resumo) return;
-    const msg = new SpeechSynthesisUtterance();
-    msg.text = resumo;
-    msg.lang = 'pt-PT'; // Tenta português de Portugal ou Brasil conforme o sistema
-    window.speechSynthesis.speak(msg);
+  const falar = () => {
+    const m = new SpeechSynthesisUtterance(resumo);
+    m.lang = 'pt-BR';
+    window.speechSynthesis.speak(m);
+  };
+
+  const partilharZap = () => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent("*Resumo:* " + resumo)}`;
+    window.open(url, '_blank');
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 bg-gray-100 text-gray-900">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-6 border">
-        <h1 className="text-2xl font-bold text-blue-600 mb-4 text-center">Resumo Pro + Áudio</h1>
+    <main className="flex min-h-screen flex-col items-center p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+      <div className="max-w-2xl w-full bg-gray-50 dark:bg-gray-800 rounded-3xl shadow-2xl p-6 border dark:border-gray-700">
+        <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400 mb-6 text-center italic">RESUMO MASTER</h1>
         
         <textarea 
-          className="w-full h-32 p-3 border rounded-xl mb-4 outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Cole o texto aqui..."
+          className="w-full h-32 p-4 border rounded-2xl mb-4 bg-white dark:bg-gray-700 dark:border-gray-600 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Cole seu texto..."
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
         />
         
-        <button onClick={gerarResumo} disabled={carregando} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mb-2">
-          {carregando ? "A processar..." : "🚀 Gerar e Salvar"}
+        <button onClick={gerarResumo} disabled={carregando} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl mb-4 shadow-lg transition">
+          {carregando ? "⌛ PROCESSANDO..." : "🚀 GERAR RESUMO"}
         </button>
 
         {resumo && (
-          <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
-            <p className="text-sm mb-4 italic">"{resumo}"</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={falarResumo} className="py-2 bg-green-600 text-white rounded-lg text-sm font-bold">🔊 Ouvir</button>
-              <button onClick={() => { navigator.clipboard.writeText(resumo); setCopiado(true); setTimeout(()=>setCopiado(false), 2000); }}
-                className="py-2 bg-white border border-blue-600 text-blue-600 rounded-lg text-sm">
-                {copiado ? "✅ Copiado!" : "📋 Copiar"}
+          <div className="p-5 bg-white dark:bg-gray-700 border-l-8 border-blue-600 rounded-xl shadow-inner">
+            <p className="text-sm leading-relaxed mb-6">{resumo}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={falar} className="py-3 bg-green-500 text-white rounded-xl font-bold">🔊 OUVIR</button>
+              <button onClick={partilharZap} className="py-3 bg-green-600 text-white rounded-xl font-bold">📱 WHATSAPP</button>
+              <button onClick={() => {navigator.clipboard.writeText(resumo); setCopiado(true); setTimeout(()=>setCopiado(false), 2000);}}
+                className="col-span-2 py-3 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl font-bold">
+                {copiado ? "✅ COPIADO!" : "📋 COPIAR TEXTO"}
               </button>
             </div>
           </div>
         )}
 
         {historico.length > 0 && (
-          <div className="mt-6">
-            <h3 className="font-bold text-gray-500 mb-2 text-xs border-b">Recentes</h3>
-            {historico.map((item, i) => (
-              <div key={i} onClick={() => setResumo(item.r)} className="p-2 mb-1 bg-gray-50 rounded text-[10px] truncate cursor-pointer">
-                {item.t}
+          <div className="mt-8 opacity-70">
+            <h3 className="text-xs font-bold uppercase mb-3 tracking-widest text-gray-500">Histórico Local</h3>
+            {historico.map((h, i) => (
+              <div key={i} onClick={() => setResumo(h.r)} className="p-3 mb-2 bg-gray-200 dark:bg-gray-900 rounded-lg text-[10px] truncate cursor-pointer">
+                {h.t}
               </div>
             ))}
           </div>
@@ -92,3 +92,4 @@ export default function Home() {
     </main>
   );
 }
+
